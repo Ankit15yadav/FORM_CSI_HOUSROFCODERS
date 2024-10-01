@@ -1,74 +1,94 @@
-import React, { useState } from 'react';
+"use client"
 
-const Navbar = () => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+import { useState } from 'react'
+import { Button } from "./ui/Button"
+import { Input } from "./ui/input"
+import { Label } from "./ui/Label"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "./ui/Dialog"
+import { Menu } from "lucide-react"
 
-    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-    const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
+export default function Navbar() {
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
 
     return (
-        <nav className="bg-gray-800 p-4">
-            <div className="container mx-auto flex justify-between items-center">
-                <div className="text-white text-xl font-bold">HOUSE OF CODER</div>
-                <div className="hidden md:block">
-                    <button
-                        onClick={openModal}
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                        Are you a member of CSI?
-                    </button>
-                </div>
-                <div className="md:hidden">
-                    <button
-                        onClick={toggleMenu}
-                        className="text-white focus:outline-none"
-                    >
-                        <svg className="h-6 w-6 fill-current" viewBox="0 0 24 24">
-                            <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" />
-                        </svg>
-                    </button>
+        <nav className="bg-white shadow-md">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between h-16">
+                    <div className="flex-shrink-0 flex items-center">
+                        <span className="text-xl font-bold text-gray-800">HOUSE OF CODER</span>
+                    </div>
+                    <div className="hidden sm:ml-6 sm:flex sm:items-center">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline">Are you a member of CSI?</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>CSI Member Login</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="phone" className="text-right">
+                                            Phone
+                                        </Label>
+                                        <Input id="phone" className="col-span-3" />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="csi-id" className="text-right">
+                                            CSI ID
+                                        </Label>
+                                        <Input id="csi-id" className="col-span-3" />
+                                    </div>
+                                </div>
+                                <Button className="w-full">Login</Button>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                    <div className="sm:hidden flex items-center">
+                        <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+                            <Menu className="h-6 w-6" />
+                            <span className="sr-only">Open main menu</span>
+                        </Button>
+                    </div>
                 </div>
             </div>
             {isMenuOpen && (
-                <div className="md:hidden mt-4">
-                    <button
-                        onClick={openModal}
-                        className="block w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                        Are you a member of CSI?
-                    </button>
-                </div>
-            )}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" onClick={closeModal}>
-                    <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" onClick={e => e.stopPropagation()}>
-                        <div className="mt-3 text-center">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900">CSI Member Login</h3>
-                            <div className="mt-2 px-7 py-3">
-                                <input
-                                    type="tel"
-                                    placeholder="Phone Number"
-                                    className="mt-2 px-3 py-2 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block w-full rounded-md sm:text-sm focus:ring-1"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="CSI Member ID"
-                                    className="mt-2 px-3 py-2 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block w-full rounded-md sm:text-sm focus:ring-1"
-                                />
-                                <button
-                                    className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Login
-                                </button>
-                            </div>
-                        </div>
+                <div className="sm:hidden">
+                    <div className="px-2 pt-2 pb-3 space-y-1">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full justify-start">Are you a member of CSI?</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>CSI Member Login</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="phone-mobile" className="text-right">
+                                            Phone
+                                        </Label>
+                                        <Input id="phone-mobile" className="col-span-3" />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="csi-id-mobile" className="text-right">
+                                            CSI ID
+                                        </Label>
+                                        <Input id="csi-id-mobile" className="col-span-3" />
+                                    </div>
+                                </div>
+                                <Button className="w-full">Login</Button>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </div>
             )}
         </nav>
-    );
-};
-
-export default Navbar;
+    )
+}
