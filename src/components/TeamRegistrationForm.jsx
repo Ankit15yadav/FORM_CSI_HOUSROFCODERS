@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useState, } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Button } from "./ui/Button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/Label";
 import { Card, CardContent } from "./ui/card";
 import { AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
-const MAX_TEAM_MEMBERS = 4;
+const MAX_TEAM_MEMBERS = 3;
 
-export default function TeamRegistrationForm() {
+export default function TeamRegistrationForm({ isMember }) {
+
+    const navigate = useNavigate();
+
+    const price = isMember ? 300 : 400;
+    const userType = isMember ? "member" : "not-member"
     const { register, control, handleSubmit, formState: { errors } } = useForm({
         defaultValues: {
             teamName: '',
@@ -23,10 +30,100 @@ export default function TeamRegistrationForm() {
         control,
         name: "teamMembers"
     });
+    const handlePayment = async (orderId, userId) => {
+        const options = {
+            key: "rzp_test_BTr7b0RWERDfcg",
+            amount: price * 100,  // Amount in paise
+            currency: "INR",
+            name: "House of Coders",
+            description: "Hackathon Registration Fee",
+            order_id: orderId,
+            handler: async function (response) {
+                try {
+                    // Mark payment as verified in the database
+                    const apiResponse = await fetch(`http://192.168.1.9:5000/api/user/verify-payment/${userId}`, {
+                        method: 'PUT', // or 'PUT', depending on your API design
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ isVerifiedPayment: true }),
+                    });
+
+                    if (!apiResponse.ok) {
+                        throw new Error("Failed to update payment status");
+                    }
+
+                    const result = await apiResponse.json();
+                    toast.success("Payment Successful! User verified as a member.");
+                    console.log("Payment verified and user updated:", result);
+
+                    // Redirect to thank you page
+                    window.location.href = "/thank-you.html";
+                } catch (error) {
+                    console.error("Error verifying payment:", error);
+                    toast.error("Payment successful but failed to verify. Please contact support.");
+                }
+            },
+            prefill: {
+                name: "CSI SRM",
+                email: "",
+                contact: ""
+            },
+            theme: {
+                color: "#3399cc", // Change this to your preferred primary color
+                backdrop_color: "rgba(0, 0, 0, 0.5)", // Optional: Change backdrop color
+            },
+            modal: {
+                ondismiss: async function () {
+                    // Razorpay modal closed without payment
+                    try {
+                        const deleteResponse = await fetch(`http://192.168.1.9:5000/api/user/delete/${userId}`, {
+                            method: 'DELETE',
+                        });
+
+                        if (!deleteResponse.ok) {
+                            throw new Error("Failed to delete user");
+                        }
+
+                        // console.log("User deleted due to payment failure");
+                    } catch (error) {
+                        console.error("Error deleting user:", error);
+                    }
+                }
+            }
+        };
+
+        const rzp = new window.Razorpay(options);
+
+        rzp.on('payment.failed', async function (response) {
+            console.error("Payment failed:", response);
+
+            // Delete the user in case of payment failure
+            try {
+                const deleteResponse = await fetch(`http://192.168.1.9:5000/api/user/delete/${userId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!deleteResponse.ok) {
+                    throw new Error("Failed to delete user");
+                }
+
+                // toast.success("User Deleted due to payment failure")
+
+                // console.log("User deleted due to payment failure");
+            } catch (error) {
+                console.error("Error deleting user:", error);
+            }
+        });
+
+        rzp.open();
+    };
+
 
     const onSubmit = async (data) => {
+        console.log(data);
         try {
-            const response = await fetch('https://your-backend-endpoint.com/api/team/register', {
+            const response = await fetch('http://192.168.1.9:5000/api/team/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -40,6 +137,24 @@ export default function TeamRegistrationForm() {
 
             const responseData = await response.json();
             console.log('Form submitted successfully:', responseData);
+            // After registration, initiate payment
+            const paymentResponse = await fetch('http://192.168.1.9:5000/api/payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: price,
+                    currency: "INR",
+                    userType: userType,
+                }),
+            });
+
+            const userId = responseData.teamId;
+            console.log(userId);
+
+            const paymentData = await paymentResponse.json();
+            await handlePayment(paymentData.orderId, userId);  // Trigger payment
 
             // You can add additional logic, like showing success messages or redirecting
         } catch (error) {
@@ -50,7 +165,7 @@ export default function TeamRegistrationForm() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#131619] p-4 mt-8">
             <Card className="w-full max-w-2xl mx-auto bg-gray-800 text-gray-100 shadow-xl">
-                <h1 className='mt-5 font-bold text-slate-400  text-3xl  text-center'>REGISTER</h1>
+                <h1 className='mt-5 font-bold text-yellow-400  text-3xl  text-center'>REGISTER</h1>
                 <CardContent className="space-y-6 p-6">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-4">
@@ -74,6 +189,16 @@ export default function TeamRegistrationForm() {
                                     className="bg-gray-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                                 />
                                 {errors.teamLeadName && <p className="text-pink-500 text-sm mt-1">{errors.teamLeadName.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="teamLeadRegisterNo" className="text-gray-300">Team Lead Registration No.</Label>
+                                <Input
+                                    id="teamLeadRegisterNo"
+                                    {...register("teamLeadRegisterNo", { required: "Team Lead RA no. required" })}
+                                    placeholder="RA number"
+                                    className="bg-gray-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
+                                />
+                                {errors.teamLeadRegisterNo && <p className="text-pink-500 text-sm mt-1">{errors.teamLeadRegisterNo.message}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -104,47 +229,43 @@ export default function TeamRegistrationForm() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-purple-400">Team Members</h3>
+                            <h3 className="text-lg font-semibold text-xl text-red-400">Team Members</h3>
                             {fields.map((field, index) => (
                                 <div key={field.id} className="space-y-4 p-4 border border-gray-700 rounded-md bg-gray-750">
                                     <div className="space-y-2">
                                         <Label htmlFor={`teamMembers.${index}.name`} className="text-gray-300">Name</Label>
                                         <Input
-                                            {...register(`teamMembers.${index}.name`, { required: "Name is required" })}
+                                            {...register(`teamMembers.${index}.name`)} // Optional
                                             placeholder="Enter member name"
                                             className="bg-gray-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                                         />
-                                        {errors.teamMembers?.[index]?.name && <p className="text-pink-500 text-sm mt-1">{errors.teamMembers[index].name.message}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor={`teamMembers.${index}.registrationNumber`} className="text-gray-300">Registration Number</Label>
                                         <Input
-                                            {...register(`teamMembers.${index}.registrationNumber`, { required: "Registration Number is required" })}
+                                            {...register(`teamMembers.${index}.registrationNumber`)} // Optional
                                             placeholder="Enter registration number"
                                             className="bg-gray-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                                         />
-                                        {errors.teamMembers?.[index]?.registrationNumber && <p className="text-pink-500 text-sm mt-1">{errors.teamMembers[index].registrationNumber.message}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor={`teamMembers.${index}.email`} className="text-gray-300">Email</Label>
                                         <Input
                                             {...register(`teamMembers.${index}.email`, {
-                                                required: "Email is required",
-                                                pattern: { value: /^\S+@\S+$/i, message: "Invalid email address" }
+                                                pattern: { value: /^\S+@\S+$/i, message: "Invalid email address" } // Optional but with pattern validation
                                             })}
                                             placeholder="Enter email"
                                             type="email"
                                             className="bg-gray-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                                         />
-                                        {errors.teamMembers?.[index]?.email && <p className="text-pink-500 text-sm mt-1">{errors.teamMembers[index].email.message}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor={`teamMembers.${index}.phone`} className="text-gray-300">Phone Number (Optional)</Label>
                                         <Input
-                                            {...register(`teamMembers.${index}.phone`)}
+                                            {...register(`teamMembers.${index}.phone`)} // Optional
                                             placeholder="Enter phone number (optional)"
                                             className="bg-gray-700 text-white border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                                         />
@@ -174,8 +295,17 @@ export default function TeamRegistrationForm() {
                             )}
                         </div>
 
-                        <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
-                            Register Team
+                        <div className=' text-white'>
+                            {
+                                isMember && (
+                                    <div className='text-sm'>
+                                        <p className='text-emerald-100'>Your Discounted Price is : ₹<s className=' text-red-300 gap-2'> 400 </s> ₹<span className='text-green-400'> 300</span></p>
+                                    </div>
+                                )
+                            }
+                        </div>
+                        <Button type="submit" className="w-full bg-red-500 text-white hover:bg-red-300 text-xl font-semibold">
+                            Register & Pay ₹{price}
                         </Button>
                     </form>
                 </CardContent>

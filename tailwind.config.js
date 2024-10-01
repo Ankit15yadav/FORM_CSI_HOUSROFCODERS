@@ -43,6 +43,27 @@ module.exports = {
           600: "#76828D",
           700: "#ABB8C4",
         },
+        brown: {
+          500: "#866463", // Row 1
+          600: "#895351", // Row 1
+          700: "#884a48", // Row 1
+          800: "#833e39", // Row 1
+          900: "#6d3a37", // Row 1
+        },
+        yellow: {
+          500: "#927b61", // Row 2
+          600: "#825826", // Row 2
+          700: "#875716", // Row 2
+          800: "#814614", // Row 2
+          900: "#6e341c", // Row 2
+        },
+        darkBrown: {
+          500: "#948c7a", // Row 3
+          600: "#836c4d", // Row 3
+          700: "#6a533b", // Row 3
+          800: "#564232", // Row 3
+          900: "#483a2c", // Row 3
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
